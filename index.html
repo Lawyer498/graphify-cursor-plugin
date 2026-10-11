@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stylux - Go'zallik Salonlari</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Telegram ranglariga moslashuvchi dizayn */
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
+
+        /* AI Qidiruv qismi */
+        .ai-search {
+            padding: 15px 20px;
+            background-color: var(--secondary-bg);
+        }
+        .ai-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .ai-input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--hint-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 14px;
+            outline: none;
+        }
+        .ai-btn {
+            padding: 12px 16px;
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .ai-btn:active {
+            opacity: 0.8;
+        }
+        .ai-btn.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Salonlar ro'yxati */
+        .salons-list {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .salon-card {
+            background-color: var(--secondary-bg);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .salon-card:active {
+            transform: scale(0.98);
+        }
+        .salon-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            flex-shrink: 0;
+        }
+        .salon-info { flex: 1; }
+        .salon-name { font-weight: bold; font-size: 16px; margin: 0 0 5px 0; }
+        .salon-desc { font-size: 13px; color: var(--hint-color); margin: 0 0 10px 0; }
+        .salon-meta { display: flex; gap: 15px; font-size: 12px; color: var(--hint-color); }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: var(--hint-color);
+        }
+        
+        .loading-spinner.active {
+            display: block;
+        }
+
+        /* Pastki tugma (Telegram MainButton) */
+        .footer-space { height: 60px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>✨ Stylux</h1>
+        <p>O'zingizga mos salonni toping</p>
+    </div>
+
+    <div class="ai-search">
+        <div class="ai-input-group">
+            <input type="text" class="ai-input" id="aiQuery" placeholder="🤖 AI dan so'rang: Soch bo'yash...">
+            <button class="ai-btn" id="searchBtn" onclick="searchAI()">Topish</button>
+        </div>
+    </div>
+
+    <div class="loading-spinner" id="loadingSpinner">
+        🤖 Qidirilmoqda...
+    </div>
+
+    <div class="salons-list" id="salonsList">
+        <div class="section-title">🔥 Tavsiya etilgan salonlar</div>
+        
+        <!-- 1-Salon -->
+        <div class="salon-card" onclick="openSalon(1)">
+            <div class="salon-img">💇‍♀️</div>
+            <div class="salon-info">
+                <h3 class="salon-name">Elite Style Salon</h3>
+                <p class="salon-desc">Professional rang berish va soch parvarishi</p>
+                <div class="salon-meta">
+                    <span>⭐ 4.8</span>
+                    <span>📍 Chilonzor</span>
+                    <span>💰 O'rtacha</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-Salon -->
+        <div class="salon-card" onclick="openSalon(2)">
+            <div class="salon-img">💈</div>
+            <div class="salon-info">
+                <h3 class="salon-name">Barber Shop No.1</h3>
+                <p class="salon-desc">Erkaklar uchun premium sartaroshxona</p>
+                <div class="salon-meta">
+                    <span>⭐ 4.9</span>
+                    <span>📍 Yunusobod</span>
+                    <span>💰 Qimmatroq</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3-Salon -->
+        <div class="salon-card" onclick="openSalon(3)">
+            <div class="salon-img">💅</div>
+            <div class="salon-info">
+                <h3 class="salon-name">Glamour Beauty</h3>
+                <p class="salon-desc">Keratin va bo'yash xizmatlari</p>
+                <div class="salon-meta">
+                    <span>⭐ 4.7</span>
+                    <span>📍 Sergeli</span>
+                    <span>💰 O'rtacha</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-space"></div>
+
+    <script>
+        // API backend URL
+        const API_URL = "https://stylux-backend.onrender.com";
+        
+        // Telegram WebApp ni ishga tushirish
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Asosiy tugmani sozlash
+        tg.MainButton.setText("Batafsil ko'rish");
+        tg.MainButton.show();
+        
+        // Tugma bosilganda hodisa
+        tg.MainButton.onClick(function() {
+            tg.showAlert("Bu yerda salon haqida to'liq ma'lumot va bron qish oynasi ochiladi!");
+        });
+
+        // AI Qidiruv funksiyasi
+        async function searchAI() {
+            const query = document.getElementById('aiQuery').value.trim();
+            const btn = document.getElementById('searchBtn');
+            const spinner = document.getElementById('loadingSpinner');
+            
+            if (!query) {
+                tg.showAlert("Iltimos, nima kerakligini yozing!");
+                return;
+            }
+
+            // UI o'zgartirishlari
+            btn.classList.add('loading');
+            btn.disabled = true;
+            spinner.classList.add('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Natijalarni ko'rsatish
+                if (data.results && data.results.length > 0) {
+                    displayResults(data.results);
+                    tg.showAlert("✅ " + data.message);
+                } else {
+                    tg.showAlert("Hech qanday salon topilmadi. Boshqa so'z bilan urinib ko'ring!");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                tg.showAlert("❌ Xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.");
+            } finally {
+                // UI o'zgartirishlarini qaytarish
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                spinner.classList.remove('active');
+            }
+        }
+
+        // Qidiruv natijalarini ko'rsatish
+        function displayResults(results) {
+            const salonsList = document.getElementById('salonsList');
+            salonsList.innerHTML = '<div class="section-title">🎯 Qidiruv Natijalari</div>';
+            
+            results.forEach((salon, index) => {
+                const card = document.createElement('div');
+                card.className = 'salon-card';
+                card.onclick = () => openSalon(salon.id);
+                card.innerHTML = `
+                    <div class="salon-img">${getEmoji(salon.name)}</div>
+                    <div class="salon-info">
+                        <h3 class="salon-name">${salon.name}</h3>
+                        <p class="salon-desc">${salon.services.join(", ")}</p>
+                        <div class="salon-meta">
+                            <span>⭐ ${salon.rating}</span>
+                            <span>📍 ${salon.location}</span>
+                            <span>💰 ${salon.price_level}</span>
+                        </div>
+                    </div>
+                `;
+                salonsList.appendChild(card);
+            });
+        }
+
+        // Emoji tanlash
+        function getEmoji(name) {
+            if (name.toLowerCase().includes('barber')) return '💈';
+            if (name.toLowerCase().includes('beauty') || name.toLowerCase().includes('glamour')) return '💅';
+            return '💇‍♀️';
+        }
+
+        // Salon kartochkasi bosilganda
+        function openSalon(id) {
+            tg.showAlert(`Siz ${id}-ID li salonni tanladingiz. Pastdagi tugmani bosib bron qiling!`);
+        }
+    </script>
+</body>
+</html>
